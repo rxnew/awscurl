@@ -8,23 +8,12 @@ A curl-like CLI application for requesting endpoints protected by AWS Signature 
 
 ### Linux and Mac
 
-```
-$ curl -L https://github.com/rxnew/awscurl/releases/latest/download/awscurl-$(uname -s)-$(uname -m).tar.gz | sudo tar -zxf -C /usr/local/bin
-```
-
-### Upgrade
-
-Perform the installation procedure again.
-
-### Uninstall
-
-```
-$ sudo rm /usr/local/bin/awscurl
+```shell
+curl -L https://github.com/rxnew/awscurl/releases/latest/download/awscurl-$(uname -s)-$(uname -m).tar.gz | tar -zx
 ```
 
 ## Quick Start
 
-```
-$ export AWS_PROFILE=xxx
-$ awscurl -X GET https://example.com
+```shell
+env AWS_PROFILE=xxx awscurl -X GET https://example.com
 ```

@@ -32,7 +32,7 @@ var opt struct {
 }
 
 var cmd = &cobra.Command{
-	Use:  "awscurl",
+	Use:  "awscurl [URL]",
 	Args: cobra.ExactArgs(1),
 	Run:  run,
 }

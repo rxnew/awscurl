@@ -73,12 +73,12 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func request(ctx context.Context, url string) (*http.Request, error) {
-	var body io.Reader
-	if d := opt.Data; d != "" {
-		body = bytes.NewReader([]byte(d))
+	b, err := requestBody(opt.Data)
+	if err != nil {
+		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, opt.Method, url, body)
+	req, err := http.NewRequestWithContext(ctx, opt.Method, url, b)
 	if err != nil {
 		return nil, err
 	}
@@ -92,4 +92,24 @@ func request(ctx context.Context, url string) (*http.Request, error) {
 	}
 
 	return req, nil
+}
+
+func requestBody(data string) (io.Reader, error) {
+	if data == "" {
+		return nil, nil
+	}
+
+	if data[0] == '@' && len(data) > 1 {
+		b, err := os.ReadFile(data[1:])
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file: %w", err)
+		}
+		return bytes.NewReader(removeNewline(b)), nil
+	}
+
+	return bytes.NewReader(removeNewline([]byte(data))), nil
+}
+
+func removeNewline(b []byte) []byte {
+	return []byte(strings.NewReplacer("\r\n", "", "\r", "", "\n", "").Replace(string(b)))
 }

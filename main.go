@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -52,12 +53,10 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("failed to load configuration: %v", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, opt.Method, args[0], requestBody(opt.Data))
+	req, err := request(ctx, args[0])
 	if err != nil {
 		log.Fatalf("failed to create HTTP request: %v", err)
 	}
-
-	setHeaders(req, opt.Headers)
 
 	resp, err := sigv4.NewHTTPClient(&cfg, opt.Service, nil).Do(req)
 	if err != nil {
@@ -73,19 +72,24 @@ func run(cmd *cobra.Command, args []string) {
 	fmt.Print(string(b))
 }
 
-func requestBody(data string) io.Reader {
-	if data == "" {
-		return nil
+func request(ctx context.Context, url string) (*http.Request, error) {
+	var body io.Reader
+	if d := opt.Data; d != "" {
+		body = bytes.NewReader([]byte(d))
 	}
-	return bytes.NewReader([]byte(data))
-}
 
-func setHeaders(req *http.Request, headers []string) {
-	for _, h := range headers {
+	req, err := http.NewRequestWithContext(ctx, opt.Method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, h := range opt.Headers {
 		a := strings.SplitN(h, ":", 2)
 		if len(a) != 2 {
-			continue
+			return nil, fmt.Errorf("invalid request header [%s]", h)
 		}
 		req.Header.Add(strings.TrimSpace(a[0]), strings.TrimSpace(a[1]))
 	}
+
+	return req, nil
 }

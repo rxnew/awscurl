@@ -56,25 +56,22 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func payloadHash(req *http.Request) (string, error) {
-	if req.GetBody == nil {
+	if req.Body == nil {
 		const emptyHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 		return emptyHash, nil
 	}
 
-	b, err := req.GetBody()
-	if err != nil {
-		return "", signErr(fmt.Errorf("failed to get request body: %w", err))
-	}
-	defer b.Close()
+	body := req.Body
+	defer body.Close()
 
 	buf := bytes.NewBuffer(nil)
-	if _, err := buf.ReadFrom(b); err != nil {
+	if _, err := buf.ReadFrom(body); err != nil {
 		return "", signErr(fmt.Errorf("failed to read request body: %w", err))
 	}
 
 	req.Body = io.NopCloser(buf)
 	req.GetBody = func() (io.ReadCloser, error) {
-		return io.NopCloser(buf), nil
+		return io.NopCloser(bytes.NewBuffer(buf.Bytes())), nil
 	}
 
 	h := sha256.Sum256(buf.Bytes())

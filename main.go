@@ -10,8 +10,10 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/spf13/cobra"
 
 	"rxnew/awscurl/sigv4"
@@ -29,6 +31,7 @@ var opt struct {
 	Headers []string
 	Method  string
 	Service string
+	Retry   uint
 }
 
 var cmd = &cobra.Command{
@@ -42,6 +45,7 @@ func init() {
 	cmd.Flags().StringSliceVarP(&opt.Headers, "header", "H", nil, "Optional headers to include with the request")
 	cmd.Flags().StringVarP(&opt.Method, "request", "X", "GET", "HTTP method [default: GET]")
 	cmd.Flags().StringVarP(&opt.Service, "service", "s", "execute-api", "AWS service name [default: execute-api]")
+	cmd.Flags().UintVar(&opt.Retry, "retry", 0, "Retry a specified number of times [default: 0]")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -58,7 +62,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("failed to create HTTP request: %v", err)
 	}
 
-	resp, err := sigv4.NewHTTPClient(&cfg, opt.Service, nil).Do(req)
+	resp, err := sigv4.NewHTTPClient(&cfg, opt.Service, newRetryableHTTPClient()).Do(req)
 	if err != nil {
 		log.Fatalf("failed to HTTP request: %v", err)
 	}
@@ -112,4 +116,16 @@ func requestBody(data string) (io.Reader, error) {
 
 func removeNewline(b []byte) []byte {
 	return []byte(strings.NewReplacer("\r\n", "", "\r", "", "\n", "").Replace(string(b)))
+}
+
+func newRetryableHTTPClient() *http.Client {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = int(opt.Retry)
+	retryClient.RetryWaitMin = 1 * time.Second
+	retryClient.RetryWaitMax = 10 * time.Minute
+	retryClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+		return resp, err
+	}
+	retryClient.Logger = nil
+	return retryClient.StandardClient()
 }

@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/spf13/cobra"
 
@@ -52,7 +51,7 @@ func run(cmd *cobra.Command, args []string) {
 	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt)
 	defer stop()
 
-	cfg, err := config.LoadDefaultConfig(ctx)
+	cfg, err := loadConfig(ctx)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
 	}
@@ -62,7 +61,7 @@ func run(cmd *cobra.Command, args []string) {
 		log.Fatalf("failed to create HTTP request: %v", err)
 	}
 
-	resp, err := sigv4.NewHTTPClient(&cfg, opt.Service, newRetryableHTTPClient()).Do(req)
+	resp, err := sigv4.NewHTTPClient(cfg, opt.Service, newRetryableHTTPClient()).Do(req)
 	if err != nil {
 		log.Fatalf("failed to HTTP request: %v", err)
 	}

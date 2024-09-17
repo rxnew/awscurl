@@ -31,6 +31,7 @@ var opt struct {
 	Method  string
 	Service string
 	Retry   uint
+	Fail    bool
 }
 
 var cmd = &cobra.Command{
@@ -45,6 +46,7 @@ func init() {
 	cmd.Flags().StringVarP(&opt.Method, "request", "X", "GET", "HTTP method [default: GET]")
 	cmd.Flags().StringVarP(&opt.Service, "service", "s", "execute-api", "AWS service name [default: execute-api]")
 	cmd.Flags().UintVar(&opt.Retry, "retry", 0, "Retry a specified number of times [default: 0]")
+	cmd.Flags().BoolVarP(&opt.Fail, "fail", "f", false, "Fail silently (no output at all) on HTTP errors")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -70,6 +72,11 @@ func run(cmd *cobra.Command, args []string) {
 	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalf("failed to read HTTP response body: %v", err)
+	}
+
+	if opt.Fail && resp.StatusCode >= 400 {
+		fmt.Printf("awscurl: (22) The requested URL returned error: %d\n", resp.StatusCode)
+		os.Exit(22)
 	}
 
 	fmt.Print(string(b))

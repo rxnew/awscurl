@@ -1,5 +1,6 @@
 # awscurl
 
+![build](https://github.com/rxnew/awscurl/actions/workflows/build.yml/badge.svg?branch=main)
 ![release](https://github.com/rxnew/awscurl/actions/workflows/release.yml/badge.svg?branch=release)
 
 A curl-like CLI application for requesting endpoints protected by AWS Signature Version 4.

@@ -1,6 +1,8 @@
 module rxnew/awscurl
 
-go 1.21
+go 1.23
+
+toolchain go1.23.1
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.22.0

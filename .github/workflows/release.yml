@@ -4,7 +4,6 @@ on:
   push:
     branches: [ release ]
 
-
 jobs:
   go-release:
     name: Go release
